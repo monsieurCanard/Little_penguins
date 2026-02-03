@@ -187,7 +187,7 @@ Nettoie les fichiers générés :
 .ko
 
 
-## Assignement 02
+## Assignement 02 
 
 Create patch for the Kernel git tree Makefile
 
@@ -198,7 +198,6 @@ Change EXTRAVERSION to includes "-thor_kernel" in its version string.
 
 
 ## Assignement 03
-
 Faut formatter un fichier c pour qu'il respecte le coding style du kernel linux
 
 ## Assignement 04
@@ -211,3 +210,5 @@ Chaque usb liste dans le system fonctionne ainsi :
 ```
 root_hub-hub_port:config.interface
 ```
+
+
