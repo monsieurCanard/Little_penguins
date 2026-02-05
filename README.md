@@ -11,6 +11,10 @@ git.kernel.org
 
 [!WARNING]
 >You may choose whatever kernel configuration you pre-fer, but you must enable CONFIG_LOCALVERSION_AUTO=y.
+> Pour verifier ca, il suffit d'ouvrir le fichier .config situe
+> ```bash
+> /usr/src/kernel-<kernel version>/.config
+>```
 
 ### Procedure:
 [!NOTE]
@@ -185,6 +189,10 @@ Nettoie les fichiers générés :
 .mod.c
 .symvers
 .ko
+
+
+[!NOTE]
+> Pour coller au mieux avec le sujet il faut utiliser la commande dmesg mais avec le -T pour mettre le timestamp en forme.
 
 
 ## Assignement 02 

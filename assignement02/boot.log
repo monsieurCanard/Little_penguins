@@ -1,0 +1,21 @@
+--------
+Feb 05 12:13:08 +01:00 antgabri  Mounting virtual file systems: /run /proc /sys /dev/shm /sys/fs/cgroup OK
+Feb 05 12:13:08 +01:00 antgabri  Create symlinks in /dev targeting /proc: /dev/stdin /dev/stdout /dev/stderr /dev/fd /dev/core OK
+Feb 05 12:13:08 +01:00 antgabri  Bringing up the loopback interface... OK
+Feb 05 12:13:08 +01:00 antgabri  Setting hostname to antgabri... OK
+Feb 05 12:13:08 +01:00 antgabri  Populating /dev with device nodes...  OK
+Feb 05 12:13:15 +01:00 antgabri  Activating all swap files/partitions... OK
+Feb 05 12:13:15 +01:00 antgabri  Mounting root file system in read-only mode...  OK
+Feb 05 12:13:15 +01:00 antgabri  Checking file systems... OK
+Feb 05 12:13:16 +01:00 antgabri  Remounting root file system in read-write mode... OK
+Feb 05 12:13:16 +01:00 antgabri  Mounting remaining file systems... OK
+Feb 05 12:13:16 +01:00 antgabri  Cleaning file systems: /tmp OK
+Feb 05 12:13:16 +01:00 antgabri  Retrying failed uevents, if any... OK
+Feb 05 12:13:17 +01:00 antgabri  Setting up Linux console... OK
+Feb 05 12:13:17 +01:00 antgabri  Starting system log daemon... OK
+Feb 05 12:13:17 +01:00 antgabri  Bringing up the enp0s3 interface... OK
+Feb 05 12:13:17 +01:00 antgabri  Adding IPv4 address 10.0.2.15 to the enp0s3 interface... OK
+Feb 05 12:13:17 +01:00 antgabri  Adding default gateway 10.0.2.2 to the enp0s3 interface... OK
+Feb 05 12:13:17 +01:00 antgabri  Bringing up the eth0 interface...Feb 05 12:13:17 +01:00 antgabri  Interface eth0 doesn't exist. FAIL
+Feb 05 12:13:17 +01:00 antgabri  Starting SSH Server... OK
+--------

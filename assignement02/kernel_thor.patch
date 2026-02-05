@@ -1,0 +1,25 @@
+From: Anthony Gabriel <mail.anthony42@gmail.com>
+Subject: Makefile: customize kernel EXTRAVERSION
+
+Change the kernel EXTRAVERSION string to identify
+the custom thor_kernel build
+
+This is a cosmetic change intended for educational and
+local build identification purposes only.
+
+Signed-off-by: Anthony Gabriel <mail.anthony42@gmail.com>
+---
+Makefile | 2+-
+1 file change, 1 insertion(+), 1 deletion(-)
+
+--- linux/Makefile      2026-02-04 12:19:28.092939388 +0100
++++ linux-thor/Makefile 2026-02-05 10:54:25.300478755 +0100
+@@ -2,7 +2,7 @@
+ VERSION = 6
+ PATCHLEVEL = 19
+ SUBLEVEL = 0
+-EXTRAVERSION = -rc8
++EXTRAVERSION = -thor_kernel
+ NAME = Baby Opossum Posse
+
+ # *DOCUMENTATION*
