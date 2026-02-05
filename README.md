@@ -220,3 +220,28 @@ root_hub-hub_port:config.interface
 ```
 
 
+
+GET /route
+POST
+
+POST /inscription
+PATCH /change_info
+
+POST /user
+PATCH /user
+
+
+
+PATCH /user
+PATCH /user/username
+
+GET /user
+
+GET /get_all_data_user
+
+
+
+
+
+PATCH /change_info
+PATCH /change_username
