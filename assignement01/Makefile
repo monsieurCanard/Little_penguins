@@ -1,7 +1,7 @@
 obj-m += hello_world.o
 
 KDIR := /lib/modules/$(shell uname -r)/extra/
-PDW := $(shell pwd)
+PWD := $(shell pwd)
 
 all:
 	$(MAKE) -C $(KDIR) M=$(PWD) modules

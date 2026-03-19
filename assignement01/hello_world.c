@@ -2,7 +2,7 @@
 #include <linux/module.h>
 
 MODULE_AUTHOR("Anthony Gabriel");
-MODULE_DESCRIPTION("Hello World 42Paris exercice");
+MODULE_DESCRIPTION("Hello World 42Nice exercice");
 MODULE_LICENSE("GPL");
 
 static int __init custom_init(void) {
