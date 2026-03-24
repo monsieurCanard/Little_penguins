@@ -1,7 +1,7 @@
 #include <linux/module.h>
+#include <linux/hid.h>
 #include <linux/init.h>
 #include <linux/usb.h>
-#include <linux/hid.h>
 
 MODULE_AUTHOR("Anthony Gabriel");
 MODULE_DESCRIPTION("Script triggered when a keyboard is plugged in");
@@ -10,7 +10,7 @@ MODULE_LICENSE("GPL");
 
 static const struct usb_device_id usb_table[] = {
 	{
-		USB_INTERFACE_INFO(USB_INTERFACE_CLASS_HID, USB_HID_SUBCLASS_BOOT, USB_INTERFACE_PROTOCOL_KEYBOARD)
+		USB_INTERFACE_INFO(USB_INTERFACE_CLASS_HID, USB_INTERFACE_SUBCLASS_BOOT, USB_INTERFACE_PROTOCOL_KEYBOARD)
 	},
 	{}
 };

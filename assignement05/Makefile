@@ -1,4 +1,4 @@
-obj-m += keyboard_hello_world.o
+obj-m += misc_forty_two.o
 
 KDIR := /lib/modules/$(shell uname -r)/build
 PDW := $(shell pwd)
