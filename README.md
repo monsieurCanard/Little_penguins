@@ -213,35 +213,269 @@ Faut formatter un fichier c pour qu'il respecte le coding style du kernel linux
 Il faut gerer l'usb d'un clavier.
 Du coup on lit la bible sur ce sujet a cette adresse 
 [USB Documentation](https://static.lwn.net/images/pdf/LDD3/ch13.pdf)
+On comprend donc qu'il nous faut un module device dirver usb pour intervenir lors du hotplug d'un clavier usb et faire un printk pour afficher un message.
 
-Chaque usb liste dans le system fonctionne ainsi : 
+Structure usb_driver :
+```c
+static struct usb_driver skel_driver = {
+        .name        = "skeleton",
+        .probe       = skel_probe,
+        .disconnect  = skel_disconnect,
+        .suspend     = skel_suspend,
+        .resume      = skel_resume,
+        .pre_reset   = skel_pre_reset,
+        .post_reset  = skel_post_reset,
+        .id_table    = skel_table,
+        .supports_autosuspend = 1,
+};
 ```
-root_hub-hub_port:config.interface
+
+Voila comment declarer un driver usb:
+```c
+static const struct usb_device_id usb_table[] = {
+	{
+		USB_INTERFACE_INFO(USB_INTERFACE_CLASS_HID, USB_INTERFACE_SUBCLASS_BOOT, USB_INTERFACE_PROTOCOL_KEYBOARD)
+	},
+	{}
+};
+
+
+static int usb_keyboard_probe(struct usb_interface *interface, const struct usb_device_id *id)
+{
+		printk(KERN_INFO "Keyboard connected, Hello World Keyboard !");
+		return 0;
+}
+
+static void usb_keyboard_disconnect(struct usb_interface *interface)
+{
+	printk(KERN_INFO "Keyboard removed or disapear in the void ! ");
+}
+
+static struct usb_driver usb_driver = {
+	.name = "usb_keyboard_driver",
+	.id_table = usb_table,
+	.probe = usb_keyboard_probe,
+	.disconnect = usb_keyboard_disconnect,
+};
 ```
 
+Et ensuite declarer les fonctions register et unregister du driver (comme dans l'assignement01) pour que le noyau puisse les appeler lors du chargement et du dechargement du module
+[!NOTE]
+>Pour register notre driver usb on utilise la fonction usb_register(&usb_driver) et pour le decharger on utilise usb_deregister(&usb_driver)
+
+```c
+
+static int __init custom_init(void)
+{
+	usb_register(&usb_keyboard_driver);
+	return 0;
+}
+
+static void __exit custom_exit(void)
+{
+	usb_deregister(&usb_keyboard_driver);
+}
+```
+
+[!NOTE]
+>A faire pour expliquer ma phase de test et mes problemes sur mon clavier usb qui est directement pris en charge par les drivers generiques du kernel et qui ne declenche pas de hotplug. 
 
 
-GET /route
-POST
+## Assignement 05
 
-POST /inscription
-PATCH /change_info
+On va devoir develloper notre propre misc (miscellaneous) driver pour faire du character device et faire du read/write.
+Pour faire c'est assez simple, contrairement l'assignement04, on va pas declarer un driver_usb mais un misc_device. Voila la structure d'un misc_device:
+```c
+struct miscdevice  {
+	int minor;
+	const char *name;
+	const struct file_operations *fops;
+	struct list_head list;
+	struct device *parent;
+	struct device *this_device;
+	const struct attribute_group **groups;
+	const char *nodename;
+	umode_t mode;
+};
+```
 
-POST /user
-PATCH /user
+Il faut zoomer un peu sur la structure file operations car c'est grace a cette structure que l'on va pouvoir faire du read/write sur notre device, en utilisant la structure pour declarer nos propres fonctions de read/write. Voila la structure file_operations: 
+```c
+ struct file_operations {
+       struct module *owner;
+       loff_t (*llseek) (struct file *, loff_t, int);
+       ssize_t (*read) (struct file *, char *, size_t, loff_t *);
+       ssize_t (*write) (struct file *, const char *, size_t, loff_t *);
+       int (*readdir) (struct file *, void *, filldir_t);
+       unsigned int (*poll) (struct file *, struct poll_table_struct *);
+       int (*ioctl) (struct inode *, struct file *, unsigned int, unsigned long);
+       int (*mmap) (struct file *, struct vm_area_struct *);
+       int (*open) (struct inode *, struct file *);
+       int (*flush) (struct file *);
+       int (*release) (struct inode *, struct file *);
+       int (*fsync) (struct file *, struct dentry *, int datasync);
+       int (*fasync) (int, struct file *, int);
+       int (*lock) (struct file *, int, struct file_lock *);
+    	 ssize_t (*readv) (struct file *, const struct iovec *, unsigned long,
+          loff_t *);
+    	 ssize_t (*writev) (struct file *, const struct iovec *, unsigned long,
+          loff_t *);
+    };
+```
+
+Maintenant qu'on a nos structures, il nous reste plus qu'a coder notre my_read et my_write pour faire du read/write sur notre device. 
+Voila comment on les declare dans la structure et dans le code:
+```c
+static const struct file_operations my_fops = {
+	.owner = THIS_MODULE,
+	.read = my_read,
+	.write = my_write,
+};
+
+static ssize_t my_write(struct file *file, const char __user *user_buf, size_t count, loff_t *ppos);
+
+static ssize_t my_read(struct file *file, char __user *user_buf, size_t count, loff_t *ppos);
+```
+[!NOTE]
+> Le pointeur de file est un pointeur vers une structure qui represente le fichier ouvert par l'utilisateur, il contient des informations sur le fichier et son etat.
+> user_buf est un pointeur vers un buffer dans l'espace utilisateur ou on va ecrire ou lire les données.
+> count est la taille des données a lire ou ecrire.
+> ppos est un pointeur vers la position actuelle dans le fichier, il est utilisé pour savoir ou on en est dans le fichier pour les prochaines lectures ou ecritures.
+
+[!WARNING]
+>Dans cea fonctions on ne va pas utiliser les fonctions read and write mais copy_to_user et copy_from_user pour faire le lien entre l'espace kernel et l'espace utilisateur, car on ne peut pas acceder directement a l'espace utilisateur depuis le kernel.
+> Il est donc tres important de faire attention a bien copier les données entre les deux espaces pour eviter les bugs et les failles de securite.
+
+Exemple:
+```c
+static ssize_t my_write(struct file *file, const char __user *user_buf, size_t count, loff_t *ppos)
+{
+	char buf[100];
+	if (count > 100) {
+		return -EINVAL;
+	}
+	if (copy_from_user(buf, user_buf, count)) {
+		return -EFAULT;
+	}
+	printk(KERN_INFO "Received from user: %s\n", buf);
+	return count;
+}
+
+static ssize_t my_read(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
+{
+	char buf[] = "Hello from kernel!";
+	size_t len = sizeof(buf);
+	if (*ppos >= len) {
+		return 0; // EOF
+	}
+	if (count > len - *ppos) {
+		count = len - *ppos;
+	}
+	if (copy_to_user(user_buf, buf + *ppos, count)) {
+		return -EFAULT;
+	}
+	//Ici on peut faire des operations sur le buffer avant de le copier a l'utilisateur, comme par exemple ajouter des informations sur le systeme ou des données dynamiques.
+	*ppos += count;
+	return count;
+}
+```
+
+Apres avoir coder nos fonctions de read/write, il nous reste plus qu'a declarer notre misc_device et faire le lien avec le noyau pour que notre module puisse etre charge et decharge correctement.
+```c
+static struct miscdevice my_misc_device = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "my_misc_device",
+	.fops = &my_fops, // On lie notre structure de file_operations a notre misc_device
+};
+
+static int __init custom_init(void)
+{
+	int ret = misc_register(&my_misc_device);
+	if (ret) {
+		printk(KERN_ERR "Unable to register misc device\n");
+		return ret;
+	}
+	printk(KERN_INFO "Misc device registered with minor %d\n", my_misc_device.minor);
+	return 0;
+}
+
+static void __exit custom_exit(void)
+{
+	misc_deregister(&my_misc_device);
+	printk(KERN_INFO "Misc device unregistered\n");
+}
+```
+
+[!NOTE]
+> MISC_DYNAMIC_MINOR permet au kernel de choisir automatiquement un numéro de minor disponible pour notre device (demande par le sujet)
+
+
+Maintenant que notre module est codé, il nous reste plus qu'a le compiler et le tester pour voir si tout fonctionne correctement.
+
+```bash
+make
+sudo insmod my_misc_device.ko
+```
+
+Verification que le module est active et que le device est cree grace a la commande dmesg et ls /dev/my_misc_device
+```bash
+dmesg | tail -1
+[Wed May 13 13:00:00 2015] Misc device registered with minor 123
+
+OU
+
+ls /dev/my_misc_device
+/dev/my_misc_device
+```
+
+Pour l'utiliser:
+
+```bash
+echo "Hello kernel" > /dev/my_misc_device
+```
+[!NOTE]
+>Cette commande va ecrire "Hello kernel" dans notre device, ce qui va appeler la fonction my_write dans notre module.
+
+```bash
+cat /dev/my_misc_device
+```
+[!NOTE]
+>Cette commande va lire les données de notre device, ce qui va appeler la fonction my_read dans notre module et afficher "Hello from kernel!" ou n'importe quoi d'autre dans le terminal.
+
+[!WARNING]
+> J'ai decouvert apres une grosse boucle infini sur mon write qu'il faut toujours return le nombre de bytes ecrit ou lu dans les fonctions de read/write pour que le kernel puisse savoir que l'operation s'est bien deroulee, sinon il va considerer que l'operation a echouee et retourner une erreur a l'utilisateur.
+> Et pour le read il faut bien pense a deplacer le pointeur ppos pour que les prochaines lectures continuent a lire a partir de la position actuelle dans le fichier, sinon on va se retrouver avec une boucle infinie de lecture du meme buffer.
+
+## Assignement 06
+
+On doit teclecharger et installer le kernel linux-next.
+
+[!NOTE]
+> Linux-next est une branche de développement du kernel linux qui contient les dernières modifications et les nouvelles fonctionnalités qui seront intégrées dans les prochaines versions du kernel. C'est une branche de test pour les développeurs et les utilisateurs avancés qui souhaitent tester les dernières fonctionnalités du kernel avant leur intégration dans la branche principale.
+
+On recupere le lien .tar de https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git/
+On telecharge le tar et on le decompresse dans /sources/
+A l'interieur du dossier decompresse on enchaine les commandes de compilation et d'installation du kernel:
+```bash
+make mrproper
+make defconfig
+make -j$(nproc)
+make modules_install
+```
+[!NOTE]
+> make install ne fonctionne pas dans notre cas car nous n'avons pas LILO (Linux Loader) d'installé sur notre machine, du coup on va devoir faire le lien manuellement dans /boot et mettre a jour notre grub pour que le nouveau kernel soit pris en compte au demarrage.
 
 
 
-PATCH /user
-PATCH /user/username
+```bash
+cp -iv arch/x86/boot/bzImage /boot/vmlinuz-<version>
+cp -iv System.map /boot/System.map-<version>
+cp -iv .config /boot/config-<version>
+```
 
-GET /user
+Nous devons maintenant mettre a jour le fichier grub.cfg pour ajouter notre entree pour le nouveau kernel
 
-GET /get_all_data_user
-
-
+Pour l'instant impossible de boot sur le dernier linux-next, j'ai peur que certaines modifications dans le kernel aient rendu mon systeme instable, du coup je vais devoir faire un rollback pour pouvoir continuer a travailler sur les autres assignements.
 
 
-
-PATCH /change_info
-PATCH /change_username
+## Assignement 07

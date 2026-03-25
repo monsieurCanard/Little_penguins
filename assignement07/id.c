@@ -1,12 +1,12 @@
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/kernel.h>
 #include <linux/errno.h>
-#include <linux/miscdevice.h>
-#include <linux/fs.h>
+#include <linux/debugfs.h>
+
+#include "debugfs.h"
 
 MODULE_AUTHOR("Anthony Gabriel");
-MODULE_DESCRIPTION("Hello World 42Nice exercice");
+MODULE_DESCRIPTION("Login verification file");
 MODULE_LICENSE("GPL");
 
 #define BUF_SIZE 128
@@ -21,9 +21,8 @@ static ssize_t my_read(struct file *file, char __user *user_buf, size_t count, l
 	if (copy_to_user(user_buf, LOGIN + *ppos, count))
 		return -EFAULT;
 
-	*ppos += count;	
+	*ppos += count;
 	return count;
-
 }
 
 static ssize_t my_write(struct file *file, const char __user *user_buf, size_t count, loff_t *ppos) {
@@ -53,33 +52,22 @@ static ssize_t my_write(struct file *file, const char __user *user_buf, size_t c
 	return count;
 }
 
-static const struct file_operations my_fops = {
-	.owner = THIS_MODULE,
-	.read = my_read,
-	.write = my_write,
+static struct file_operations fops = {
+	.write = &my_write,
+	.read = &my_read,
 };
 
-static struct miscdevice forty_two_device = {
-	.minor = MISC_DYNAMIC_MINOR,
-	.name = "forty_two",
-	.fops = &my_fops,
-};
+static struct dentry *file;
 
-static int __init custom_init(void) {
-	int ret = 0;	
-	ret = misc_register(&forty_two_device);
-        if(ret)
-                printk(KERN_ERR "Error while register misc device");
-        else
-                printk(KERN_INFO "REGISTER GOOD Forty two device\n");
+
+int id_register(struct dentry *dir) {
+	file = debugfs_create_file("id", 0666, dir, NULL, &fops);
+	if (!file)
+		return -ENOMEM;
+
 	return 0;
 }
 
-static void __exit custom_exit(void) {
-	misc_deregister(&forty_two_device);
-	printk(KERN_INFO "Cleaning up Forty two device\n");
-	return;
+void id_unregister(void) {
+	debugfs_remove(file);
 }
-
-module_init(custom_init);
-module_exit(custom_exit);

@@ -1,6 +1,9 @@
-obj-m += misc_forty_two.o
+obj-m := forty_two.o
+
+# forty_two-objs := id.o
 
 KDIR := /lib/modules/$(shell uname -r)/build
+
 PWD := $(shell pwd)
 
 all:
